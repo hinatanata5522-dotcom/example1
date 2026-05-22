@@ -1,144 +1,41 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sample HP</title>
+function checkShibauraIR() {
 
-  <style>
-    body{
-      margin:0;
-      font-family:sans-serif;
-      background:#f4f4f4;
-      color:#333;
-    }
+  const url = "https://www.shibaura-machine.co.jp/jp/ir/";
 
-    header{
-      background:#222;
-      color:white;
-      padding:20px;
-      text-align:center;
-    }
+  const html = UrlFetchApp.fetch(url).getContentText("UTF-8");
 
-    nav{
-      background:#444;
-      padding:10px;
-      text-align:center;
-    }
+  // IRニュース部分だけ抽出
+  const match = html.match(/IRニュース[\s\S]*?プレスリリース/);
 
-    nav a{
-      color:white;
-      margin:0 15px;
-      text-decoration:none;
-    }
+  if (!match) {
+    Logger.log("IRニュース欄取得失敗");
+    return;
+  }
 
-    .hero{
-      padding:80px 20px;
-      text-align:center;
-      background:white;
-    }
+  const currentIR = match[0];
 
-    .hero h1{
-      font-size:48px;
-      margin-bottom:10px;
-    }
+  const props = PropertiesService.getScriptProperties();
+  const oldIR = props.getProperty("shibaura_ir");
 
-    .hero p{
-      font-size:20px;
-      color:#666;
-    }
+  // 初回保存
+  if (!oldIR) {
+    props.setProperty("shibaura_ir", currentIR);
+    Logger.log("初回データ保存");
+    return;
+  }
 
-    .section{
-      max-width:1000px;
-      margin:auto;
-      padding:50px 20px;
-    }
+  // 更新検知
+  if (oldIR !== currentIR) {
 
-    .cards{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-      gap:20px;
-    }
+    GmailApp.sendEmail(
+      "ua148768@gmail.com",
+      "【IR更新通知】芝浦機械",
+      "芝浦機械のIRニュースが更新されました。\n\n" +
+      url
+    );
 
-    .card{
-      background:white;
-      padding:20px;
-      border-radius:12px;
-      box-shadow:0 2px 10px rgba(0,0,0,0.1);
-    }
+    props.setProperty("shibaura_ir", currentIR);
 
-    footer{
-      background:#222;
-      color:white;
-      text-align:center;
-      padding:20px;
-      margin-top:40px;
-    }
-
-    button{
-      background:#007bff;
-      color:white;
-      border:none;
-      padding:12px 20px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:16px;
-    }
-
-    button:hover{
-      opacity:0.9;
-    }
-  </style>
-</head>
-
-<body>
-
-  <header>
-    <h1>My Sample Website</h1>
-    <p>シンプルなサンプルHP</p>
-  </header>
-
-  <nav>
-    <a href="#">ホーム</a>
-    <a href="#">サービス</a>
-    <a href="#">会社情報</a>
-    <a href="#">お問い合わせしてくるな</a>
-  </nav>
-
-  <section class="hero">
-    <h1>Welcome</h1>
-    <p>これはサンプルホームページです。</p>
-    <button onclick="alert('クリックされました！')">
-      詳しく見る
-    </button>
-  </section>
-
-  <section class="section">
-    <h2>サービス紹介</h2>
-
-    <div class="cards">
-
-      <div class="card">
-        <h3>Web制作</h3>
-        <p>シンプルで見やすいWebサイトを制作します。</p>
-      </div>
-
-      <div class="card">
-        <h3>アプリ開発</h3>
-        <p>スマホアプリやWebアプリを開発します。</p>
-      </div>
-
-      <div class="card">
-        <h3>AI活用</h3>
-        <p>AIを利用した業務効率化を支援します。</p>
-      </div>
-
-    </div>
-  </section>
-
-  <footer>
-    © 2026 Sample Website
-  </footer>
-
-</body>
-</html>
+    Logger.log("IR更新検知");
+  }
+}
